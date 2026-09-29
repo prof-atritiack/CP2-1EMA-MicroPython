@@ -1,38 +1,256 @@
-# Checkpoint 2 - Computational Thinking For Engineering
+# ESP32 + MicroPython + LCD I2C 20x4 no Wokwi
 
-**Turma:** 1EMA
+Este projeto utiliza um **ESP32 com MicroPython** e um **display LCD 20x4 com interface I2C**, executado no **Wokwi Simulator dentro do VS Code**.
 
-Este repositório contém os códigos e arquivos necessários para a resolução da tarefa "Checkpoint 2", baseada nas instruções do documento de referência **Atividade_ESP32_MicroPython_LCD_API_MQTT.pdf**.
+## Estrutura do projeto
 
-## Descrição do Projeto
+```text
+1EMA-CTFE/
+├── diagram.json
+├── firmware.bin
+├── i2c_lcd.py
+├── lcd_api.py
+├── main.py
+├── platformio.ini
+└── wokwi.toml
+```
 
-O objetivo desta atividade prática é desenvolver e testar aplicações de comunicação utilizando o microcontrolador ESP32 programado em MicroPython. O projeto explora três recursos fundamentais em sistemas de Internet das Coisas (IoT):
-1. Controle de um display LCD via protocolo I2C.
-2. Consulta de dados meteorológicos por meio de uma API HTTP (OpenWeather).
-3. Comunicação via protocolo MQTT para envio de dados.
+## Requisitos
 
-O repositório abrange desde a implementação individual de cada recurso até o "Desafio" final, que consiste na integração completa de todas as etapas.
+Antes de iniciar, tenha instalado:
 
-## Objetivos e Etapas
+- VS Code;
+- extensão Wokwi Simulator;
+- Python;
+- `mpremote`.
 
-- **Etapa 1: Display LCD 20x4:** Configuração do circuito no Wokwi e exibição de mensagens no display utilizando as bibliotecas `lcd_api.py` e `i2c_lcd.py`.
-- **Etapa 2: Consulta à API OpenWeather:** Conexão à rede (Wokwi-GUEST), requisição HTTP utilizando `urequests` para obter o JSON da API e extração de dados como temperatura, umidade e condição do tempo.
-- **Etapa 3: Comunicação MQTT:** Conexão ao broker público do HiveMQ e publicação periódica de dados em formato JSON, com visualização e assinatura do tópico através do Node-RED.
-- **Desafio Integrado:** Aplicação unificada onde o ESP32 consulta os dados meteorológicos na OpenWeather, apresenta as informações no LCD 20x4 e publica esses dados em JSON via MQTT para serem visualizados em um dashboard/fluxo no Node-RED.
+A instalação do `mpremote` precisa ser feita apenas uma vez no computador:
 
-## Tecnologias e Ferramentas Utilizadas
+```bash
+python -m pip install mpremote
+```
 
-*   **Hardware / Simulador:** ESP32 (via simulador [Wokwi](https://wokwi.com/))
-*   **Linguagem:** MicroPython
-*   **Protocolos:** I2C, HTTP/REST, MQTT
-*   **APIs e Serviços:** OpenWeather API, HiveMQ (Broker MQTT Público)
-*   **Integração:** Node-RED
+---
 
-## Como Executar o Projeto (Simulação no Wokwi)
+## 1. Clonar o repositório
 
-1. Crie um novo projeto MicroPython para ESP32 no simulador Wokwi.
-2. Adicione os arquivos `lcd_api.py` e `i2c_lcd.py` ao seu projeto para o funcionamento do display.
-3. Monte o circuito conectando os pinos SDA e SCL do LCD 20x4 aos pinos correspondentes do ESP32 (geralmente GPIO 21 e 22).
-4. Substitua a chave de acesso (API Key) da OpenWeather no código principal.
-5. Inicie a simulação. Certifique-se de que o ESP32 conectou à rede `Wokwi-GUEST`.
-6. Para visualizar os dados MQTT, importe o fluxo necessário no **Node-RED** e configure o nó MQTT IN para assinar o mesmo tópico definido no código do ESP32 apontando para o broker do HiveMQ.
+Clone o repositório e abra a pasta do projeto no VS Code.
+
+---
+
+## 2. Iniciar a simulação
+
+Inicie o **Wokwi Simulator** no VS Code.
+
+Aguarde o MicroPython inicializar.
+
+No terminal do Wokwi deverá aparecer:
+
+```text
+>>>
+```
+
+Isso indica que o interpretador MicroPython está pronto.
+
+---
+
+## 3. Enviar os arquivos Python para o ESP32 simulado
+
+> **Importante:** no Wokwi para VS Code, os arquivos `.py` do computador não são automaticamente copiados para o sistema de arquivos interno do ESP32 simulado.
+
+Com a simulação em execução, abra um **novo terminal do VS Code** e execute:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp main.py :main.py
+```
+
+Depois:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp i2c_lcd.py :i2c_lcd.py
+```
+
+E:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp lcd_api.py :lcd_api.py
+```
+
+---
+
+## 4. Conferir os arquivos enviados
+
+Execute:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs ls
+```
+
+O resultado deve apresentar arquivos semelhantes a:
+
+```text
+boot.py
+main.py
+i2c_lcd.py
+lcd_api.py
+```
+
+Os tamanhos podem variar, mas nenhum dos três arquivos do projeto deve aparecer com `0 bytes`.
+
+---
+
+## 5. Executar o programa
+
+Volte ao **terminal do Wokwi**, onde aparece:
+
+```text
+>>>
+```
+
+Pressione:
+
+```text
+Ctrl + D
+```
+
+O MicroPython fará um **soft reboot** e executará automaticamente o arquivo `main.py`.
+
+O display LCD deverá apresentar as mensagens programadas.
+
+---
+
+## Conexões I2C
+
+Neste projeto:
+
+| LCD I2C | ESP32 |
+|---|---|
+| SDA | GPIO 21 |
+| SCL | GPIO 22 |
+| VCC | alimentação |
+| GND | GND |
+
+O endereço I2C utilizado no código é:
+
+```python
+0x27
+```
+
+A configuração do barramento no `main.py` é:
+
+```python
+i2c = I2C(
+    0,
+    sda=Pin(21),
+    scl=Pin(22),
+    freq=400000
+)
+```
+
+---
+
+## Atenção ao reiniciar o Wokwi
+
+Ao **parar completamente e iniciar novamente** a simulação, os arquivos copiados para o sistema de arquivos interno do ESP32 podem desaparecer.
+
+Se isso acontecer, execute novamente apenas os três comandos:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp main.py :main.py
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp i2c_lcd.py :i2c_lcd.py
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp lcd_api.py :lcd_api.py
+```
+
+Depois volte ao terminal do Wokwi e pressione:
+
+```text
+Ctrl + D
+```
+
+Não é necessário reinstalar o `mpremote`.
+
+---
+
+## Problemas comuns
+
+### `No module named mpremote`
+
+O `mpremote` ainda não está instalado.
+
+Execute:
+
+```bash
+python -m pip install mpremote
+```
+
+### Aparece somente `boot.py`
+
+Os arquivos do projeto ainda não foram enviados ao ESP32 simulado.
+
+Execute novamente os três comandos `fs cp`.
+
+### Um arquivo aparece com `0 bytes`
+
+Verifique se o arquivo possui conteúdo e se foi salvo no VS Code.
+
+Depois envie-o novamente.
+
+Exemplo:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs cp i2c_lcd.py :i2c_lcd.py
+```
+
+### `could not enter raw repl`
+
+Pare e inicie novamente o Wokwi.
+
+Aguarde aparecer:
+
+```text
+>>>
+```
+
+e tente o comando novamente.
+
+### O LCD não apresenta nenhuma mensagem
+
+Primeiro confirme se os arquivos estão no ESP32:
+
+```bash
+python -m mpremote connect port:rfc2217://localhost:4000 fs ls
+```
+
+Depois confirme se o programa foi iniciado com:
+
+```text
+Ctrl + D
+```
+
+Também verifique as conexões:
+
+- SDA → GPIO 21;
+- SCL → GPIO 22;
+- endereço I2C → `0x27`.
+
+---
+
+## Fluxo resumido
+
+```text
+Clonar o repositório
+        ↓
+Abrir no VS Code
+        ↓
+Iniciar o Wokwi
+        ↓
+Aguardar >>>
+        ↓
+Copiar main.py
+Copiar i2c_lcd.py
+Copiar lcd_api.py
+        ↓
+Pressionar Ctrl + D
+        ↓
+Executar o projeto
+```
